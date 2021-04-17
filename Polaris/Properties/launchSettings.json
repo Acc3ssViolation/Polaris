@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Polaris": {
+      "commandName": "Project",
+      "commandLineArgs": "--environment=Development"
+    }
+  }
+}
