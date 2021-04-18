@@ -9,8 +9,10 @@ namespace Polaris.Storage
 {
     public class DbServer
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         public ulong Id { get; set; }
+
+        public List<DbPermission> Permissions { get; } = new List<DbPermission>();
 
         public static void OnModelCreating(ModelBuilder modelBuilder)
         {

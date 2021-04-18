@@ -1,8 +1,10 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Polaris.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,6 +34,9 @@ namespace Polaris
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
+            _commandService.AddTypeReader<ClaimType>(new EnumTypeReader<ClaimType>());
+            _commandService.AddTypeReader<Operation>(new EnumTypeReader<Operation>());
+
             await _commandService.AddModulesAsync(Assembly.GetEntryAssembly(), _serviceProvider);
             _client.MessageReceived += OnMessageReceived;
             _commandService.Log += LogAsync;
@@ -39,12 +44,13 @@ namespace Polaris
             _logger.LogInformation("Started plugin service");
         }
 
-        public async Task StopAsync(CancellationToken cancellationToken)
+        public Task StopAsync(CancellationToken cancellationToken)
         {
             _client.MessageReceived -= OnMessageReceived;
             _commandService.Log -= LogAsync;
             _commandService.CommandExecuted -= OnCommandExecutedAsync;
             _logger.LogInformation("Stopped plugin service");
+            return Task.CompletedTask;
         }
 
         private async Task LogAsync(LogMessage message)
@@ -74,7 +80,7 @@ namespace Polaris
                 return;
 
             var argPos = 0;
-            if (!userMessage.HasStringPrefix(_settings.CommandPrefix, ref argPos) || userMessage.Author.IsBot)
+            if (!userMessage.HasStringPrefix(_settings.CommandPrefix, ref argPos))// || userMessage.Author.IsBot)
                 return;
 
             var context = new SocketCommandContext(_client, userMessage);
@@ -85,8 +91,20 @@ namespace Polaris
             }
             catch (Exception e)
             {
+                await context.Channel.SendMessageAsync("Beep boop :(");
+
                 _logger.LogError(e, "Exception when trying execute process user command");
             }
+        }
+    }
+
+    internal class EnumTypeReader<TEnum> : TypeReader where TEnum: struct
+    {
+        public override Task<TypeReaderResult> ReadAsync(ICommandContext context, string input, IServiceProvider services)
+        {
+            if (Enum.TryParse<TEnum>(input, true, out var result))
+                return Task.FromResult(TypeReaderResult.FromSuccess(result));
+            return Task.FromResult(TypeReaderResult.FromError(CommandError.ParseFailed, $"Input {input} could not be parsed as {typeof(TEnum)}"));
         }
     }
 }

@@ -10,6 +10,7 @@ namespace Polaris.Storage
     public class PolarisDbContext : DbContext
     {
         public DbSet<DbServer> Servers { get; set; }
+        public DbSet<DbPermission> Permissions { get; set; }
 
         public PolarisDbContext() : base(DefaultOptions)
         {
@@ -24,6 +25,7 @@ namespace Polaris.Storage
             base.OnModelCreating(modelBuilder);
 
             DbServer.OnModelCreating(modelBuilder);
+            DbPermission.OnModelCreating(modelBuilder);
         }
 
         public static DbContextOptions<PolarisDbContext> DefaultOptions

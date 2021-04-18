@@ -10,7 +10,7 @@ namespace Polaris.Authorization
     {
         public static bool HasClaim(this IClaimCollection collection, string identifier, Operation operation)
         {
-            return collection.Claims.Any(c => c.Identifier == identifier && (c.ClaimedOperations & operation) == operation);
+            return collection.Claims.Any(c => string.Equals(c.Identifier, identifier, StringComparison.OrdinalIgnoreCase) && (c.ClaimedOperations & operation) == operation);
         }
     }
 }

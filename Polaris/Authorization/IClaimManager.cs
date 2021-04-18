@@ -9,11 +9,10 @@ namespace Polaris.Authorization
 {
     public interface IClaimManager
     {
-        Task<IUserClaimCollection?> GetUserClaimCollectionAsync(ulong userId, CancellationToken cancellationToken);
-        Task<IRoleClaimCollection?> GetRoleClaimCollectionAsync(ulong roleId, CancellationToken cancellationToken);
+        Task<IUserClaimCollection?> GetUserClaimCollectionAsync(ulong guildId, ulong userId, CancellationToken cancellationToken);
+        Task<IRoleClaimCollection?> GetRoleClaimCollectionAsync(ulong guildId, ulong roleId, CancellationToken cancellationToken);
 
-        Task<bool> CreateClaimCollectionAsync(IClaimCollection collection, CancellationToken cancellationToken);
-        Task<bool> UpdateClaimCollectionAsync(IClaimCollection collection, CancellationToken cancellationToken);
-        Task<bool> DeleteClaimCollectionAsync(IClaimCollection collection, CancellationToken cancellationToken);
+        Task<bool> UpdatePermissionClaimAsync(ulong guildId, ClaimType type, ulong subjectId, IPermissionClaim claim, CancellationToken cancellationToken);
+        Task<bool> DeletePermissionClaimAsync(ulong guildId, ClaimType type, ulong subjectId, string claimIdentifier, CancellationToken cancellationToken);
     }
 }

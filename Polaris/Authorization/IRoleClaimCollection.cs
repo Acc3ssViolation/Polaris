@@ -8,7 +8,6 @@ namespace Polaris.Authorization
 {
     public interface IRoleClaimCollection : IClaimCollection
     {
-        public ulong GuildId { get; }
         public ulong RoleId { get; }
     }
 }

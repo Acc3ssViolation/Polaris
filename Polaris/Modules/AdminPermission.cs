@@ -6,13 +6,13 @@ namespace Polaris.Modules
     {
         public string Identifier => "admin";
 
-        public Operation PossibleOperations => Operation.Create | Operation.Read | Operation.Update | Operation.Delete;
+        public Operation PossibleOperations => Operation.Get | Operation.Set | Operation.Delete;
 
         public class Claims : IPermission
         {
             public string Identifier => "admin.claims";
 
-            public Operation PossibleOperations => Operation.Create | Operation.Read | Operation.Update | Operation.Delete;
+            public Operation PossibleOperations => Operation.Get | Operation.Set | Operation.Delete;
         }
     }
 }

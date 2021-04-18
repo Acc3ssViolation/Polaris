@@ -8,6 +8,7 @@ namespace Polaris.Authorization
 {
     public interface IClaimCollection
     {
+        public ulong GuildId { get; }
         public IReadOnlyCollection<IPermissionClaim> Claims { get; }
     }
 }

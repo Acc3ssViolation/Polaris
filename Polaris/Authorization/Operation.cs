@@ -10,9 +10,8 @@ namespace Polaris.Authorization
     public enum Operation
     {
         None = 0,
-        Create = 1,
-        Read = 2,
-        Update = 4,
-        Delete = 8
+        Get = 1,
+        Set = 2,
+        Delete = 4
     }
 }

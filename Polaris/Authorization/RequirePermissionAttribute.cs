@@ -42,7 +42,7 @@ namespace Polaris.Authorization
                         return PreconditionResult.FromSuccess();
                 }
 
-                return PreconditionResult.FromError("User is not authorized");
+                return PreconditionResult.FromError($"User needs permission `{Permission} ({Operation})` to run this command");
             }
 
             return PreconditionResult.FromSuccess();

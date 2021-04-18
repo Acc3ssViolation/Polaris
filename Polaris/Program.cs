@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Polaris.Authorization;
 using Polaris.Storage;
 using System;
 using System.IO;
@@ -44,6 +45,8 @@ namespace Polaris
                 .AddSingleton<Func<PolarisDbContext>>(CreateDatabase)
                 .AddTransient<DatabaseStorage>()
                 .AddSingleton<DiscordSocketClient>()
+                .AddSingleton<IClaimManager, ServerClaimManager>()
+                .AddSingleton<IClaimProvider, ServerClaimProvider>()
                 .AddHostedService<PluginService>()
                 .AddHostedService<DiscordService>()
                 .AddHostedService<GuildService>();
