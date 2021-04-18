@@ -17,20 +17,61 @@ namespace Polaris.Modules
         public Task EchoAsync([Summary("Text to echo")] string message) => ReplyAsync(message);
 
         [Command("throw")]
+        [Summary("Throws an exception")]
         public Task ExceptionThrowAsync() => throw new IndexOutOfRangeException("Wut");
     }
 
     [Group("perm")]
+    [Summary("Provides permission management")]
     public class ClaimsModule : ModuleBase<SocketCommandContext>
     {
         private readonly IClaimManager _claimManager;
+        //private readonly IPermissionManager _permissionManager;
+        private readonly CommandService _commandService;
 
-        public ClaimsModule(IClaimManager claimManager)
+        public ClaimsModule(IClaimManager claimManager, CommandService commandService)
         {
             _claimManager = claimManager ?? throw new ArgumentNullException(nameof(claimManager));
+            _commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
+        }
+
+        [Command("list")]
+        [Summary("Lists all available permissions")]
+        public async Task ListPermissions()
+        {
+
+        }
+
+        [Command("command")]
+        [Summary("Gets the permission required for a command")]
+        public async Task Command(string name)
+        {
+            var result = _commandService.Search(name);
+            if (result.Commands?.Count > 0)
+            {
+                var command = result.Commands[0].Command;
+
+                var builder = new StringBuilder();
+                builder.AppendLine($"Permissions needed for command `{name}`:");
+                var permissionAttribute = command.Preconditions.OfType<RequirePermissionAttribute>().FirstOrDefault();
+                if (permissionAttribute is null)
+                {
+                    builder.AppendLine("No permissions required");
+                }
+                else
+                {
+                    builder.AppendLine($"`{permissionAttribute.Permission}: {permissionAttribute.Operation}`");
+                }
+                await ReplyAsync(builder.ToString());
+            }
+            else
+            {
+                await ReplyAsync($"Unable to find command {name}");
+            }
         }
 
         [Command("get")]
+        [Summary("Gets all permissions for a user or role")]
         [RequirePermission(typeof(AdminPermission.Claims), Operation.Get)]
         public async Task GetClaims(ClaimType type, string name)
         {
@@ -49,6 +90,7 @@ namespace Polaris.Modules
         }
 
         [Command("set")]
+        [Summary("Sets a permission for a user or role")]
         [RequirePermission(typeof(AdminPermission.Claims), Operation.Set)]
         public async Task SetClaim(ClaimType type, string name, string identifier, Operation allowedOperations)
         {
@@ -73,6 +115,7 @@ namespace Polaris.Modules
         }
 
         [Command("rm")]
+        [Summary("Removes a permission from a user or role")]
         [RequirePermission(typeof(AdminPermission.Claims), Operation.Delete)]
         public async Task RemoveClaim(ClaimType type, string name, string identifier)
         {
