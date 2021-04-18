@@ -9,5 +9,7 @@ namespace Polaris
     public class DiscordSettings
     {
         public string Token { get; set; } = string.Empty;
+        public string CommandPrefix { get; set; } = "!";
+        public string? StoragePath { get; set; }
     }
 }

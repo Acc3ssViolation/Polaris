@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -13,27 +14,26 @@ namespace Polaris
 {
     internal class DiscordService : IHostedService
     {
-        private DiscordSocketClient? _discordClient;
+        private readonly DiscordSocketClient _client;
         private readonly ILogger<DiscordService> _logger;
         private readonly DiscordSettings _discordSettings;
 
-        public DiscordService(ILogger<DiscordService> logger, DiscordSettings discordSettings)
+        public DiscordService(DiscordSocketClient client, ILogger<DiscordService> logger, DiscordSettings discordSettings)
         {
+            _client = client ?? throw new ArgumentNullException(nameof(client));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _discordSettings = discordSettings ?? throw new ArgumentNullException(nameof(discordSettings));
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            _discordClient = new DiscordSocketClient();
-
-            _discordClient.Log += DiscordLog;
+            _client.Log += DiscordLog;
 
             _logger.LogInformation("Starting discord client");
             try
             {
-                await _discordClient.LoginAsync(TokenType.Bot, _discordSettings.Token);
-                await _discordClient.StartAsync();
+                await _client.LoginAsync(TokenType.Bot, _discordSettings.Token);
+                await _client.StartAsync();
             }
             catch (Exception e)
             {
@@ -43,22 +43,16 @@ namespace Polaris
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            if (_discordClient is not null)
+            _logger.LogInformation("Shutting down discord client");
+            try
             {
-                _logger.LogInformation("Shutting down discord client");
-                try
-                {
-                    _discordClient.Log -= DiscordLog;
-                    _discordClient.Dispose();
-                    await _discordClient.StopAsync();
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Exception during client shutdown");
-                }
+                _client.Log -= DiscordLog;
+                await _client.StopAsync();
             }
-            
-            _discordClient = null;
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Exception during client shutdown");
+            }
         }
 
         private Task DiscordLog(LogMessage message)
@@ -74,7 +68,7 @@ namespace Polaris
                 _ => throw new NotImplementedException()
             };
 
-            _logger.Log(level, "Discord log: {Log}", message.Message);
+            _logger.Log(level, message.Exception, "Discord log: {Log}", message.Message);
             return Task.CompletedTask;
         }
     }
