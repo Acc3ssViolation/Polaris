@@ -8,9 +8,9 @@ namespace Polaris.Authorization
 {
     public static class ClaimExtensions
     {
-        public static bool HasClaim(this IClaimCollection collection, string identifier, Operation operation)
+        public static bool HasClaim(this IClaimCollection collection, string identifier)
         {
-            return collection.Claims.Any(c => string.Equals(c.Identifier, identifier, StringComparison.OrdinalIgnoreCase) && (c.ClaimedOperations & operation) == operation);
+            return collection.Claims.Contains(identifier);
         }
     }
 }

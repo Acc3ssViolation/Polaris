@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Polaris.Authorization;
+using Polaris.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,8 +35,7 @@ namespace Polaris
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            _commandService.AddTypeReader<ClaimType>(new EnumTypeReader<ClaimType>());
-            _commandService.AddTypeReader<Operation>(new EnumTypeReader<Operation>());
+            _commandService.AddTypeReader<SubjectType>(new EnumTypeReader<SubjectType>());
 
             await _commandService.AddModulesAsync(Assembly.GetEntryAssembly(), _serviceProvider);
             _client.MessageReceived += OnMessageReceived;

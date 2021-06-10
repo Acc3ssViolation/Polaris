@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using Polaris.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,49 +11,6 @@ namespace Polaris.Authorization
 {
     internal class ServerClaimProvider : IClaimProvider
     {
-        private class EmptyClaimCollection : IClaimCollection
-        {
-            public ulong GuildId { get; }
-
-            public IReadOnlyCollection<IPermissionClaim> Claims => Array.Empty<IPermissionClaim>();
-
-            public EmptyClaimCollection(ulong guildId)
-            {
-                GuildId = guildId;
-            }
-        }
-
-        private class CombinedClaimCollection : IClaimCollection
-        {
-            public ulong GuildId { get; }
-
-            public IReadOnlyCollection<IPermissionClaim> Claims { get; }
-
-            public CombinedClaimCollection(ulong guildId, IEnumerable<IClaimCollection> collections)
-            {
-                GuildId = guildId;
-
-                var claims = new Dictionary<string, IPermissionClaim>();
-                foreach (var collection in collections)
-                {
-                    foreach(var claim in collection.Claims)
-                    {
-                        if (claims.TryGetValue(claim.Identifier, out var exitingClaim))
-                        {
-                            exitingClaim = new PermissionClaim(claim.Identifier, exitingClaim.ClaimedOperations | claim.ClaimedOperations);
-                        }
-                        else
-                        {
-                            exitingClaim = claim;
-                        }
-                        claims[claim.Identifier] = exitingClaim;
-                    }
-                }
-
-                Claims = claims.Values.ToList();
-            }
-        }
-
         private readonly IClaimManager _claimManager;
 
         public ServerClaimProvider(IClaimManager claimManager)
@@ -64,21 +22,22 @@ namespace Polaris.Authorization
         {
             if (user is SocketGuildUser guildUser)
             {
+                var claims = new List<string>();
                 var guildId = guildUser.Guild.Id;
-                var collections = new List<IClaimCollection>();
-                var claimCollection = (IClaimCollection?)await _claimManager.GetUserClaimCollectionAsync(guildId, guildUser.Id, default).ConfigureAwait(false);
-                if (claimCollection != null)
-                    collections.Add(claimCollection);
+                var claimCollection = await _claimManager.GetClaimCollectionAsync(new GuildSubject(SubjectType.User, user.Id, guildId), default).ConfigureAwait(false);
+
+                claims.AddRange(claimCollection!.Claims);
+
                 foreach (var role in guildUser.Roles)
                 {
-                    claimCollection = await _claimManager.GetRoleClaimCollectionAsync(guildId, role.Id, default).ConfigureAwait(false);
-                    if (claimCollection != null)
-                        collections.Add(claimCollection);
+                    claimCollection = await _claimManager.GetClaimCollectionAsync(new GuildSubject(SubjectType.Role, role.Id, guildId), default).ConfigureAwait(false);
+                    claims.AddRange(claimCollection!.Claims);
                 }
 
-                return new CombinedClaimCollection(guildId, collections);
+                return new ClaimCollection(new GuildSubject(SubjectType.User, user.Id, guildId), claims);
             }
-            return new EmptyClaimCollection(0);
+
+            return new ClaimCollection(new GuildSubject(SubjectType.User, user.Id, 0), Array.Empty<string>());
         }
     }
 }

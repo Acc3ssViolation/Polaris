@@ -11,22 +11,12 @@ namespace Polaris.Authorization
 {
     public class RequirePermissionAttribute : PreconditionAttribute
     {
-        public string Permission { get; }
-        public Operation Operation { get; }
+        public bool InheritParentPermission { get; }
         public bool AlwaysAllowOwner { get; }
 
-        public RequirePermissionAttribute(string permission, Operation operation, bool alwaysAllowOwner = true)
+        public RequirePermissionAttribute(bool inheritParentPermission = true, bool alwaysAllowOwner = false)
         {
-            Permission = permission ?? throw new ArgumentNullException(nameof(permission));
-            Operation = operation;
-            AlwaysAllowOwner = alwaysAllowOwner;
-        }
-
-        public RequirePermissionAttribute(Type permission, Operation operation, bool alwaysAllowOwner = true) 
-        {
-            var permissionInstance = Activator.CreateInstance(permission) as IPermission;
-            Permission = permissionInstance?.Identifier ?? throw new ArgumentException($"{permission.GetType()} is not an IPermission");
-            Operation = operation;
+            InheritParentPermission = inheritParentPermission;
             AlwaysAllowOwner = alwaysAllowOwner;
         }
 
@@ -34,18 +24,29 @@ namespace Polaris.Authorization
         {
             var claimProvider = services.GetRequiredService<IClaimProvider>();
             var claims = await claimProvider.GetClaimCollectionAsync(context.User);
-            if (!claims.HasClaim(Permission, Operation))
-            {
-                if (context.User is SocketGuildUser guildUser)
-                {
-                    if (guildUser.Guild.OwnerId == guildUser.Id)
-                        return PreconditionResult.FromSuccess();
-                }
 
-                return PreconditionResult.FromError($"User needs permission `{Permission} ({Operation})` to run this command");
+            if (context.User is SocketGuildUser guildUser)
+            {
+                if (AlwaysAllowOwner && guildUser.Guild.OwnerId == guildUser.Id)
+                    return PreconditionResult.FromSuccess();
             }
 
-            return PreconditionResult.FromSuccess();
+            var permissionName = command.Module.Group + "." + command.Name.Replace(' ', '.');
+
+            do
+            {
+                Console.WriteLine($"Checking permission {permissionName}");
+                if (claims.HasClaim(permissionName))
+                    return PreconditionResult.FromSuccess();
+
+                var parentNameEndIndex = permissionName.IndexOf('.');
+                if (parentNameEndIndex == -1)
+                    break;
+
+                permissionName = permissionName.Substring(0, parentNameEndIndex);
+            } while (InheritParentPermission);
+
+            return PreconditionResult.FromError($"User does not have permission to run this command");
         }
     }
 }

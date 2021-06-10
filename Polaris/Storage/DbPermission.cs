@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Polaris.Authorization;
+using Polaris.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,21 +11,19 @@ namespace Polaris.Storage
 {
     public class DbPermission
     {
-        public ClaimType SubjectType { get; set; }
+        public SubjectType SubjectType { get; set; }
         public ulong SubjectId { get; set; }
         public ulong ServerId { get; set; }
         public string Identifier { get; set; } = string.Empty;
-        public Operation AllowedOperations { get; set; }
 
-        public DbServer Server { get; set; }
+        public DbServer? Server { get; set; }
 
-        public DbPermission(ClaimType subjectType, ulong subjectId, ulong serverId, string identifier, Operation allowedOperations)
+        public DbPermission(SubjectType subjectType, ulong subjectId, ulong serverId, string identifier)
         {
             SubjectType = subjectType;
             SubjectId = subjectId;
             ServerId = serverId;
             Identifier = identifier ?? throw new ArgumentNullException(nameof(identifier));
-            AllowedOperations = allowedOperations;
         }
 
         public static void OnModelCreating(ModelBuilder modelBuilder)

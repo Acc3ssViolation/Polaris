@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Polaris.Common;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,10 +10,9 @@ namespace Polaris.Authorization
 {
     public interface IClaimManager
     {
-        Task<IUserClaimCollection?> GetUserClaimCollectionAsync(ulong guildId, ulong userId, CancellationToken cancellationToken);
-        Task<IRoleClaimCollection?> GetRoleClaimCollectionAsync(ulong guildId, ulong roleId, CancellationToken cancellationToken);
+        Task<IClaimCollection?> GetClaimCollectionAsync(GuildSubject subject, CancellationToken cancellationToken);
 
-        Task<bool> UpdatePermissionClaimAsync(ulong guildId, ClaimType type, ulong subjectId, IPermissionClaim claim, CancellationToken cancellationToken);
-        Task<bool> DeletePermissionClaimAsync(ulong guildId, ClaimType type, ulong subjectId, string claimIdentifier, CancellationToken cancellationToken);
+        Task SetPermissionClaimAsync(GuildSubject subject, string claim, CancellationToken cancellationToken);
+        Task DeletePermissionClaimAsync(GuildSubject subject, string claim, CancellationToken cancellationToken);
     }
 }

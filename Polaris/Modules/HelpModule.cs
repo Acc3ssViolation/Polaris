@@ -29,6 +29,10 @@ namespace Polaris.Modules
                     builder.Append($"{command.Module.Group} ");
                 builder.Append(command.Name);
                 builder.Append('`');
+                foreach(var parameter in command.Parameters)
+                {
+                    builder.Append($" `{parameter.Name}`");
+                }
                 builder.AppendLine($": {command.Summary}");
             }
             await ReplyAsync(builder.ToString());
