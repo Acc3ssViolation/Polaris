@@ -28,11 +28,11 @@ namespace Polaris.Modules
                 if (!string.IsNullOrWhiteSpace(command.Module.Group))
                     builder.Append($"{command.Module.Group} ");
                 builder.Append(command.Name);
-                builder.Append('`');
                 foreach(var parameter in command.Parameters)
                 {
-                    builder.Append($" `{parameter.Name}`");
+                    builder.Append($" ${parameter.Name}");
                 }
+                builder.Append('`');
                 builder.AppendLine($": {command.Summary}");
             }
             await ReplyAsync(builder.ToString());
