@@ -29,6 +29,33 @@ namespace Polaris.Modules
         public Task TestAsync(SocketRole targetRole) => ReplyAsync($"Role <@{targetRole.Id}> was created on {targetRole.CreatedAt}", allowedMentions: AllowedMentions.None);
     }
 
+
+    [Summary("Provides user management")]
+    public class YeetModule : ModuleBase<SocketCommandContext>
+    {
+        [Command("yeet")]
+        [Summary("Bans a user from the server")]
+        [RequirePermission]
+        [RequireBotPermission(GuildPermission.BanMembers)]
+        public async Task YeetAsync(SocketGuildUser user, string? reason = null)
+        {
+            await Context.Guild.AddBanAsync(user, 0, reason);
+
+            await ReplyAsync($"{GuildSubject.FromGuildUser(user).MentionString} was yeeted");
+        }
+
+        [Command("kick")]
+        [Summary("Kicks a user from the server")]
+        [RequirePermission]
+        [RequireBotPermission(GuildPermission.KickMembers)]
+        public async Task KickAsync(SocketGuildUser user, string? reason = null)
+        {
+            await user.KickAsync(reason);
+
+            await ReplyAsync($"{GuildSubject.FromGuildUser(user).MentionString} was kicked");
+        }
+    }
+
     [Group("perm")]
     [Summary("Provides permission management")]
     public class ClaimsModule : ModuleBase<SocketCommandContext>
