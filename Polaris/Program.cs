@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Polaris.Authorization;
 using Polaris.Storage;
 using System;
@@ -62,6 +63,10 @@ namespace Polaris
             };
             var dbContextOptionsBuilder = new DbContextOptionsBuilder<PolarisDbContext>();
             dbContextOptionsBuilder.UseSqlite(builder.ToString());
+#if DEBUG
+            dbContextOptionsBuilder.UseLoggerFactory(serviceProvider.GetRequiredService<ILoggerFactory>());
+            dbContextOptionsBuilder.EnableSensitiveDataLogging(true);
+#endif
             var options = dbContextOptionsBuilder.Options;
 
             return () => new PolarisDbContext(options);

@@ -7,5 +7,5 @@ using System.Threading.Tasks;
 
 namespace Polaris.Authorization
 {
-    public record ClaimCollection(GuildSubject Subject, IReadOnlyList<string> Claims): IClaimCollection;
+    public record ClaimCollection(GuildSubject Subject, IReadOnlyList<Claim> Claims): IClaimCollection;
 }

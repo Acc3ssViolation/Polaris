@@ -15,15 +15,17 @@ namespace Polaris.Storage
         public ulong SubjectId { get; set; }
         public ulong ServerId { get; set; }
         public string Identifier { get; set; } = string.Empty;
+        public bool Allow { get; set; }
 
         public DbServer? Server { get; set; }
 
-        public DbPermission(SubjectType subjectType, ulong subjectId, ulong serverId, string identifier)
+        public DbPermission(SubjectType subjectType, ulong subjectId, ulong serverId, string identifier, bool allow)
         {
             SubjectType = subjectType;
             SubjectId = subjectId;
             ServerId = serverId;
             Identifier = identifier ?? throw new ArgumentNullException(nameof(identifier));
+            Allow = allow;
         }
 
         public static void OnModelCreating(ModelBuilder modelBuilder)
@@ -32,7 +34,7 @@ namespace Polaris.Storage
             entityBuilder.HasKey(_ => new { _.Identifier, _.SubjectType, _.SubjectId });
             entityBuilder.HasIndex(_ => _.ServerId);
             entityBuilder.HasOne(_ => _.Server)
-                .WithMany(_ => _.Permissions)
+                .WithMany(_ => _!.Permissions)
                 .HasForeignKey(_ => _.ServerId)
                 .IsRequired(true)
                 .OnDelete(DeleteBehavior.Cascade);

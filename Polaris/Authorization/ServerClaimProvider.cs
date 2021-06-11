@@ -22,7 +22,7 @@ namespace Polaris.Authorization
         {
             if (user is SocketGuildUser guildUser)
             {
-                var claims = new List<string>();
+                var claims = new List<Claim>();
                 var guildId = guildUser.Guild.Id;
                 var claimCollection = await _claimManager.GetClaimCollectionAsync(new GuildSubject(SubjectType.User, user.Id, guildId), default).ConfigureAwait(false);
 
@@ -37,7 +37,7 @@ namespace Polaris.Authorization
                 return new ClaimCollection(new GuildSubject(SubjectType.User, user.Id, guildId), claims);
             }
 
-            return new ClaimCollection(new GuildSubject(SubjectType.User, user.Id, 0), Array.Empty<string>());
+            return new ClaimCollection(new GuildSubject(SubjectType.User, user.Id, 0), Array.Empty<Claim>());
         }
     }
 }

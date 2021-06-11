@@ -10,6 +10,6 @@ namespace Polaris.Authorization
     public interface IClaimCollection
     {
         public GuildSubject Subject { get; }
-        public IReadOnlyList<string> Claims { get; }
+        public IReadOnlyList<Claim> Claims { get; }
     }
 }

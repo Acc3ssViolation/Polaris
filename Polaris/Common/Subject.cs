@@ -14,5 +14,12 @@ namespace Polaris.Common
     {
         public static GuildSubject FromGuildUser(SocketGuildUser user) => new GuildSubject(SubjectType.User, user.Id, user.Guild.Id);
         public static GuildSubject FromRole(SocketRole role) => new GuildSubject(SubjectType.Role, role.Id, role.Guild.Id);
+
+        public string MentionString => Type switch
+        {
+            SubjectType.User => $"<@{Id}>",
+            SubjectType.Role => $"<@&{Id}>",
+            _ => $"<@{Id}>"
+        };
     }
 }

@@ -12,7 +12,7 @@ namespace Polaris.Authorization
     {
         Task<IClaimCollection?> GetClaimCollectionAsync(GuildSubject subject, CancellationToken cancellationToken);
 
-        Task SetPermissionClaimAsync(GuildSubject subject, string claim, CancellationToken cancellationToken);
-        Task DeletePermissionClaimAsync(GuildSubject subject, string claim, CancellationToken cancellationToken);
+        Task SetPermissionClaimAsync(GuildSubject subject, Claim claim, CancellationToken cancellationToken);
+        Task DeletePermissionClaimAsync(GuildSubject subject, string claimIdentifier, CancellationToken cancellationToken);
     }
 }

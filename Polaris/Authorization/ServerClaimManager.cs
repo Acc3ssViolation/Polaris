@@ -29,38 +29,38 @@ namespace Polaris.Authorization
                 throw new ArgumentException("Invalid subject type for claims", nameof(subject));
 
             using var dbContext = _dbFactory();
-            var dbPermissions = dbContext.Permissions.AsNoTracking().Where(p => p.ServerId == subject.GuildId && p.SubjectId == p.SubjectId && p.SubjectType == p.SubjectType);
+            var dbPermissions = dbContext.Permissions.AsNoTracking().Where(p => (p.ServerId == subject.GuildId) && (p.SubjectId == subject.Id) && (p.SubjectType == subject.Type));
 
-            var claims = await dbPermissions.Select(p => p.Identifier).ToListAsync(cancellationToken);
+            var claims = await dbPermissions.Select(p => new Claim(p.Identifier, p.Allow)).ToListAsync(cancellationToken);
 
             return new ClaimCollection(subject, claims);
         }
 
-        public async Task SetPermissionClaimAsync(GuildSubject subject, string claim, CancellationToken cancellationToken)
+        public async Task SetPermissionClaimAsync(GuildSubject subject, Claim claim, CancellationToken cancellationToken)
         {
             if (!AllowedSubjectTypes.Contains(subject.Type))
                 throw new ArgumentException("Invalid subject type for claims", nameof(subject));
 
             using var dbContext = _dbFactory();
-            var dbPermissions = dbContext.Permissions.AsNoTracking().Where(p => p.ServerId == subject.GuildId && p.SubjectId == p.SubjectId && p.SubjectType == p.SubjectType);
-            var dbPermission = await dbPermissions.FirstOrDefaultAsync(p => p.Identifier == claim, cancellationToken);
+            var dbPermissions = dbContext.Permissions.AsNoTracking().Where(p => (p.ServerId == subject.GuildId) && (p.SubjectId == subject.Id) && (p.SubjectType == subject.Type));
+            var dbPermission = await dbPermissions.FirstOrDefaultAsync(p => p.Identifier == claim.Identifier, cancellationToken);
             if (dbPermission is not null)
                 return;
 
-            dbPermission = new DbPermission(subject.Type, subject.Id, subject.GuildId, claim);
+            dbPermission = new DbPermission(subject.Type, subject.Id, subject.GuildId, claim.Identifier, claim.Allow);
             dbContext.Permissions.Add(dbPermission);
 
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task DeletePermissionClaimAsync(GuildSubject subject, string claim, CancellationToken cancellationToken)
+        public async Task DeletePermissionClaimAsync(GuildSubject subject, string claimIdentifier, CancellationToken cancellationToken)
         {
             if (!AllowedSubjectTypes.Contains(subject.Type))
                 throw new ArgumentException("Invalid subject type for claims", nameof(subject));
 
             using var dbContext = _dbFactory();
-            var dbPermissions = dbContext.Permissions.AsNoTracking().Where(p => p.ServerId == subject.GuildId && p.SubjectId == p.SubjectId && p.SubjectType == p.SubjectType);
-            var dbPermission = await dbPermissions.FirstOrDefaultAsync(p => p.Identifier == claim, cancellationToken);
+            var dbPermissions = dbContext.Permissions.AsNoTracking().Where(p => (p.ServerId == subject.GuildId) && (p.SubjectId == subject.Id) && (p.SubjectType == subject.Type));
+            var dbPermission = await dbPermissions.FirstOrDefaultAsync(p => p.Identifier == claimIdentifier, cancellationToken);
             if (dbPermission is null)
                 return;
 

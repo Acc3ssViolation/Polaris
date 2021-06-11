@@ -24,16 +24,18 @@ namespace Polaris.Modules
             var builder = new StringBuilder();
             foreach (var command in commands)
             {
-                builder.Append('`');
+                builder.Append("> `");
                 if (!string.IsNullOrWhiteSpace(command.Module.Group))
                     builder.Append($"{command.Module.Group} ");
                 builder.Append(command.Name);
                 foreach(var parameter in command.Parameters)
                 {
-                    builder.Append($" ${parameter.Name}");
+                    builder.Append($" [{parameter.Name}: {parameter.Type.Name}]");
                 }
-                builder.Append('`');
-                builder.AppendLine($": {command.Summary}");
+                builder.AppendLine("`");
+                if (command.Summary?.Length > 0)
+                    builder.AppendLine($"> {command.Summary}");
+                builder.AppendLine();
             }
             await ReplyAsync(builder.ToString());
         }
