@@ -26,6 +26,7 @@ namespace Octantis
                 {
                     configBuilder
                         .AddIniFile("octantis.ini")
+                        .AddIniFile("octantis.dev.ini", true)
                         .AddEnvironmentVariables()
                         .AddCommandLine(args);
                 })

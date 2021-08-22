@@ -63,6 +63,23 @@ namespace Octantis
 
             await TransmitGatewayAsync(helloPacket, cancellationToken);
 
+            var identifyPacket = new GatewayPacket<IdentifyData>
+            {
+                Data = new IdentifyData
+                {
+                    Intents = (1 << 9) | 1,
+                    Token = _settings.Value.Token,
+                    Properties = new IdentifyDataProperties
+                    {
+                        Browser = "octantis",
+                        Device = "octantis",
+                        Os = "linux"
+                    }
+                },
+                Opcode = Opcode.Identify
+            };
+
+            await TransmitGatewayAsync(identifyPacket, cancellationToken);
 
             await base.StartAsync(cancellationToken);
         }
@@ -107,7 +124,7 @@ namespace Octantis
                         continue;
                     }
                     var json = Encoding.UTF8.GetString(receiveBuffer.Slice(0, result.Count).Span);
-                    _logger.LogTrace("Received message '{Json}'", json);                    
+                    _logger.LogTrace("Received message '{Type}': '{Json}'", result.MessageType, json);                    
                     
                 }
             }
