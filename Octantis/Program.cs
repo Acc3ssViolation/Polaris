@@ -46,7 +46,7 @@ namespace Octantis
                     {
                         AllowTrailingCommas = true,
                         PropertyNamingPolicy = new LowerCamelCaseNamingPolicy(),
-                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                        //DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
                     };
                     serviceCollection
                         .Configure<DiscordSettings>(context.Configuration.GetSection("Discord"))

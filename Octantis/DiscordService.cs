@@ -52,16 +52,24 @@ namespace Octantis
             _webSocket = new ClientWebSocket();
             await _webSocket.ConnectAsync(new Uri($"{url}?v=9&encoding=json"), cancellationToken);
             
-            var helloPacket = new GatewayPacket<HelloData>
+            var connect = ConnectSequenceAsync(cancellationToken);
+           
+            await base.StartAsync(cancellationToken);
+        }
+
+        private async Task ConnectSequenceAsync(CancellationToken cancellationToken)
+        {
+            await Task.Delay(2000);
+
+            var heartbeatPacket = new GatewayPacket<int?>
             {
-                Data = new HelloData
-                {
-                    HeartbeatInterval = 45000
-                },
-                Opcode = Opcode.Hello,
+                Data = null,
+                Opcode = Opcode.Heartbeat
             };
 
-            await TransmitGatewayAsync(helloPacket, cancellationToken);
+            await TransmitGatewayAsync(heartbeatPacket, cancellationToken);
+
+            await Task.Delay(1000);
 
             var identifyPacket = new GatewayPacket<IdentifyData>
             {
@@ -81,7 +89,6 @@ namespace Octantis
 
             await TransmitGatewayAsync(identifyPacket, cancellationToken);
 
-            await base.StartAsync(cancellationToken);
         }
 
         public override async Task StopAsync(CancellationToken cancellationToken)
