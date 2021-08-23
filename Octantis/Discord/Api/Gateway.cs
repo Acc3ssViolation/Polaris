@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Octantis.Discord.Api
@@ -29,12 +31,21 @@ namespace Octantis.Discord.Api
         public string? EventName { get; set; }
     }
 
+    public class UnavailableGuild
+    {
+        // TODO: Proper support for 64 bit snowflakes
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+    }
+
     public class ReadyData
     {
         [JsonPropertyName("v")]
         public int GatewayVersion { get; set; }
         [JsonPropertyName("session_id")]
         public string SessionId { get; set; } = string.Empty;
+        [JsonPropertyName("guilds")]
+        public IReadOnlyList<UnavailableGuild> Guilds { get; set; } = Array.Empty<UnavailableGuild>();
     }
 
     public class HelloData

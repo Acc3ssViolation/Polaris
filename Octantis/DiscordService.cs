@@ -161,7 +161,10 @@ namespace Octantis
         {
             var genericGateway = JsonSerializer.Deserialize<GatewayPacket<object>>(json, _jsonOptions);
             if (genericGateway is null)
+            {
+                _logger.LogError("Unable to parse generic gateway packet");
                 return;
+            }
 
             if (genericGateway.SequenceNumber is not null)
                 _lastSequenceNumber = genericGateway.SequenceNumber;
@@ -172,7 +175,7 @@ namespace Octantis
                     if (genericGateway.Opcode == Opcode.Hello)
                     {
                         // We got a Hello, start sending heartbeats!
-                        var helloPacket = JsonSerializer.Deserialize<GatewayPacket<HelloData>>(json, _jsonOptions);
+                        var helloPacket = DeserializePacket<HelloData>(json);
                         if (helloPacket is null || helloPacket.Data is null)
                         {
                             _logger.LogError("Invalid hello packet");
@@ -206,7 +209,7 @@ namespace Octantis
                     }
                     else if (genericGateway.Opcode == Opcode.Dispatch && genericGateway.EventName == Events.Ready)
                     {
-                        var readyPacket = JsonSerializer.Deserialize<GatewayPacket<ReadyData>>(json, _jsonOptions);
+                        var readyPacket = DeserializePacket<ReadyData>(json);
                         if (readyPacket is null || readyPacket.Data is null)
                         {
                             _logger.LogError("Invalid ready packet");
@@ -214,9 +217,17 @@ namespace Octantis
                         }
                         _sessionId = readyPacket.Data.SessionId;
                         _logger.LogInformation("Connected to gateway v{Version}, session id '{Id}'", readyPacket.Data.GatewayVersion, _sessionId);
+                        foreach (var guild in readyPacket.Data.Guilds)
+                        {
+                            _logger.LogDebug("Guild '{Id}'", guild.Id);
+                        }
 
                         // Got the ready event, move up to connected state!
                         _state = GatewayState.Connected;
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Unhandled opcode '{Opcode}'", genericGateway.Opcode);
                     }
                     break;
                 case GatewayState.Connected:
@@ -235,6 +246,19 @@ namespace Octantis
                     }
                     break;
             }
+        }
+
+        private GatewayPacket<T>? DeserializePacket<T>(string json)
+        {
+            try
+            {
+                return JsonSerializer.Deserialize<GatewayPacket<T>>(json, _jsonOptions);
+            }
+            catch (JsonException e)
+            {
+                _logger.LogError(e, "Exception when trying to deserialize JSON");
+            }
+            return null;
         }
 
         private async Task SendHeartbeatAsync(CancellationToken cancellationToken)
