@@ -48,12 +48,16 @@ namespace Octantis
                         PropertyNamingPolicy = new LowerCamelCaseNamingPolicy(),
                         //DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
                     };
+                    jsonOptions.Converters.Add(new SnowflakeConverter());
                     serviceCollection
                         .Configure<DiscordSettings>(context.Configuration.GetSection("Discord"))
                         .AddSingleton<JsonSerializerOptions>((sp) => jsonOptions)
                         .AddSingleton<RestApi>()
                         .AddSingleton<HttpClient>()
-                        .AddHostedService<DiscordService>();
+                        .AddSingleton<GatewayService>()
+                        .AddSingleton<IHostedService>(sp => sp.GetRequiredService<GatewayService>())
+                        .AddSingleton<IGateway>(sp => sp.GetRequiredService<GatewayService>())
+                        .AddHostedService<ApplicationCommandService>();
                 });
 
             using var host = hostBuilder.Build();

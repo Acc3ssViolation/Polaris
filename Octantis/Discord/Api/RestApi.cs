@@ -26,6 +26,7 @@ namespace Octantis.Discord.Api
 
         public async Task<T?> GetAsync<T>(string url, CancellationToken cancellationToken) where T: class
         {
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bot", _settings.Value.Token);
             var result = await _httpClient.GetAsync(ApiBase + url, cancellationToken);
 
             if (!result.IsSuccessStatusCode)

@@ -19,5 +19,6 @@ namespace Octantis.Discord.Api
         public ulong Id { get; set; }
         public ChannelType Type { get; set; }
         public ulong? GuildId { get; set; }
+        public string Name { get; set; } = string.Empty;
     }
 }

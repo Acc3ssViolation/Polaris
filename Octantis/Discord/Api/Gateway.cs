@@ -13,10 +13,24 @@ namespace Octantis.Discord.Api
         HeartbeatAck = 11,
     }
 
+    public enum Event
+    {
+        Unknown,
+        Ready,
+        GuildCreate
+    }
+
     public static class Events
     {
         public const string Ready = "READY";
         public const string GuildCreate = "GUILD_CREATE";
+
+        public static Event FromString(string eventType) => eventType switch
+        {
+            Ready => Event.Ready,
+            GuildCreate => Event.GuildCreate,
+            _ => Event.Unknown
+        };
     }
 
     public class GatewayPacket<T>
@@ -33,9 +47,8 @@ namespace Octantis.Discord.Api
 
     public class UnavailableGuild
     {
-        // TODO: Proper support for 64 bit snowflakes
         [JsonPropertyName("id")]
-        public string Id { get; set; } = string.Empty;
+        public ulong Id { get; set; }
     }
 
     public class ReadyData

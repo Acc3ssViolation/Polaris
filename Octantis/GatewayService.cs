@@ -14,14 +14,6 @@ using System.Threading.Tasks;
 
 namespace Octantis
 {
-    internal enum GatewayState
-    {
-        Disconnected,
-        Connecting,
-        Connected,
-        Reconnecting
-    }
-
     internal class BackgroundTask : IDisposable
     {
         private Task _task;
@@ -60,10 +52,48 @@ namespace Octantis
         }
     }
 
-    internal class DiscordService : BackgroundService, IHostedService
+    internal class GatewayService : BackgroundService, IHostedService, IGateway
     {
+        private class Registration : IDisposable
+        {
+            private bool _disposed;
+
+            private readonly GatewayService _parent;
+
+            public Event Type { get; }
+            public Action<object> Action { get; }
+            public Type ArgumentType { get; }
+
+            public Registration(GatewayService parent, Event type, Action<object> action, Type argumentType)
+            {
+                _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+                Type = type;
+                Action = action ?? throw new ArgumentNullException(nameof(action));
+                ArgumentType = argumentType ?? throw new ArgumentNullException(nameof(argumentType));
+            }
+
+            protected virtual void Dispose(bool disposing)
+            {
+                if (!_disposed)
+                {
+                    if (disposing)
+                    {
+                        _parent.RemoveEventHandler(this);
+                    }
+                    _disposed = true;
+                }
+            }
+
+            public void Dispose()
+            {
+                // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+                Dispose(disposing: true);
+                GC.SuppressFinalize(this);
+            }
+        }
+
         private readonly IOptions<DiscordSettings> _settings;
-        private readonly ILogger<DiscordService> _logger;
+        private readonly ILogger<GatewayService> _logger;
         private readonly JsonSerializerOptions _jsonOptions;
         private readonly RestApi _restApi;
 
@@ -76,12 +106,44 @@ namespace Octantis
 
         private BackgroundTask? _heartbeatTask;
 
-        public DiscordService(IOptions<DiscordSettings> settings, ILogger<DiscordService> logger, JsonSerializerOptions jsonOptions, RestApi restApi)
+        private Dictionary<Event, List<Registration>> _registrations = new Dictionary<Event, List<Registration>>();
+
+        public GatewayState State => _state;
+
+        public GatewayService(IOptions<DiscordSettings> settings, ILogger<GatewayService> logger, JsonSerializerOptions jsonOptions, RestApi restApi)
         {
             _settings = settings;
             _logger = logger;
             _jsonOptions = jsonOptions;
             _restApi = restApi;
+        }
+
+        public IDisposable AddEventHandler<T>(Event type, Action<T> handler) where T: class, new()
+        {
+            lock (_registrations)
+            {
+                if (!_registrations.TryGetValue(type, out var registrationsForType))
+                {
+                    registrationsForType = new List<Registration>();
+                    _registrations[type] = registrationsForType;
+                }
+
+                var registration = new Registration(this, type, (arg) => handler((T)arg), typeof(T));
+                registrationsForType.Add(registration);
+                return registration;
+            }
+        }
+
+        private void RemoveEventHandler(Registration registration)
+        {
+            lock (_registrations)
+            {
+                if (!_registrations.TryGetValue(registration.Type, out var registrationsForType))
+                {
+                    return;
+                }
+                registrationsForType.Remove(registration);
+            }
         }
 
         public override async Task StartAsync(CancellationToken cancellationToken)
@@ -106,26 +168,7 @@ namespace Octantis
             _webSocket = new ClientWebSocket();
             await _webSocket.ConnectAsync(new Uri($"{url}?v=9&encoding=json"), cancellationToken);
 
-            var connect = ConnectSequenceAsync(cancellationToken);
-           
             await base.StartAsync(cancellationToken);
-        }
-
-        private async Task ConnectSequenceAsync(CancellationToken cancellationToken)
-        {
-            await Task.Delay(2000);
-
-            var heartbeatPacket = new GatewayPacket<int?>
-            {
-                Data = null,
-                Opcode = Opcode.Heartbeat
-            };
-
-            await TransmitGatewayAsync(heartbeatPacket, cancellationToken);
-
-            await Task.Delay(1000);
-
-
         }
 
         public override async Task StopAsync(CancellationToken cancellationToken)
@@ -143,6 +186,8 @@ namespace Octantis
                 _heartbeatTask.Dispose();
                 _heartbeatTask = null;
             }
+
+            _registrations.Clear();
 
             _logger.LogInformation("Stopped Discord Service");
         }
@@ -241,7 +286,21 @@ namespace Octantis
                         else if (genericGateway.Opcode == Opcode.Dispatch)
                         {
                             // EVENTS :D
-
+                            var type = Events.FromString(genericGateway.EventName!);
+                            List<Registration>? registrationsForEvent;
+                            lock (_registrations)
+                            {
+                                _registrations.TryGetValue(type, out registrationsForEvent);
+                            }
+                            if (registrationsForEvent is not null)
+                            {
+                                foreach (var registration in registrationsForEvent)
+                                {
+                                    var packetType = typeof(GatewayPacket<>).MakeGenericType(registration.ArgumentType);
+                                    dynamic deserializedAsType = JsonSerializer.Deserialize(json, packetType, _jsonOptions)!;
+                                    registration.Action(deserializedAsType.Data);
+                                }
+                            }
                         }
                     }
                     break;
@@ -310,9 +369,20 @@ namespace Octantis
                         continue;
                     }
                     var json = Encoding.UTF8.GetString(receiveBuffer.Slice(0, result.Count).Span);
-                    _logger.LogTrace("Received message '{Type}': '{Json}'", result.MessageType, json);                    
-                    
-                    await HandlePacket(json, stoppingToken);
+                    _logger.LogTrace("Received message '{Type}': '{Json}'", result.MessageType, json);
+
+                    try
+                    {
+                        await HandlePacket(json, stoppingToken);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // Expected
+                    }
+                    catch (Exception exc)
+                    {
+                        _logger.LogError(exc, "Exception when trying to handle gateway packet");
+                    }
                 }
             }
             catch (OperationCanceledException)
