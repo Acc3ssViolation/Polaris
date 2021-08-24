@@ -17,6 +17,7 @@ namespace Octantis.Discord.Api
     public interface IGateway
     {
         GatewayState State { get; }
+        ulong ApplicationId { get; }
 
         IDisposable AddEventHandler<T>(Event type, Action<T> handler) where T : class, new();
     }

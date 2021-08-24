@@ -109,6 +109,7 @@ namespace Octantis
         private Dictionary<Event, List<Registration>> _registrations = new Dictionary<Event, List<Registration>>();
 
         public GatewayState State => _state;
+        public ulong ApplicationId { get; private set; }
 
         public GatewayService(IOptions<DiscordSettings> settings, ILogger<GatewayService> logger, JsonSerializerOptions jsonOptions, RestApi restApi)
         {
@@ -260,8 +261,9 @@ namespace Octantis
                             _logger.LogError("Invalid ready packet");
                             return;
                         }
+                        ApplicationId = readyPacket.Data.User?.Id ?? 0;
                         _sessionId = readyPacket.Data.SessionId;
-                        _logger.LogInformation("Connected to gateway v{Version}, session id '{Id}'", readyPacket.Data.GatewayVersion, _sessionId);
+                        _logger.LogInformation("Connected to gateway v{Version}, application id '{Id}', session id '{Id}'", readyPacket.Data.GatewayVersion, ApplicationId, _sessionId);
                         foreach (var guild in readyPacket.Data.Guilds)
                         {
                             _logger.LogDebug("Guild '{Id}'", guild.Id);
@@ -300,6 +302,10 @@ namespace Octantis
                                     dynamic deserializedAsType = JsonSerializer.Deserialize(json, packetType, _jsonOptions)!;
                                     registration.Action(deserializedAsType.Data);
                                 }
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Unhandled event type '{Type}'", type);
                             }
                         }
                     }

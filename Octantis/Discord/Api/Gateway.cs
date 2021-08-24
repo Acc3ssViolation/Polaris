@@ -17,20 +17,27 @@ namespace Octantis.Discord.Api
     {
         Unknown,
         Ready,
-        GuildCreate
+        GuildCreate,
+        InteractionCreate,
     }
 
     public static class Events
     {
         public const string Ready = "READY";
-        public const string GuildCreate = "GUILD_CREATE";
 
-        public static Event FromString(string eventType) => eventType switch
+        private static readonly Dictionary<string, Event> EventMap = new Dictionary<string, Event>
         {
-            Ready => Event.Ready,
-            GuildCreate => Event.GuildCreate,
-            _ => Event.Unknown
+            { "GUILD_CREATE", Event.GuildCreate },
+            { "INTERACTION_CREATE", Event.InteractionCreate },
+            { "READY", Event.Ready },
         };
+
+        public static Event FromString(string eventType)
+        {
+            if (EventMap.TryGetValue(eventType, out var result))
+                return result;
+            return Event.Unknown;
+        }
     }
 
     public class GatewayPacket<T>
@@ -59,6 +66,7 @@ namespace Octantis.Discord.Api
         public string SessionId { get; set; } = string.Empty;
         [JsonPropertyName("guilds")]
         public IReadOnlyList<UnavailableGuild> Guilds { get; set; } = Array.Empty<UnavailableGuild>();
+        public User? User { get; set; }
     }
 
     public class HelloData
