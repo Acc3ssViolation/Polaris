@@ -69,10 +69,18 @@ namespace Octantis
                     Description = "My first slash command!",
                     Type = ApplicationCommandType.ChatInput
                 };
-                var result = await _api.PostAsync<ApplicationCommand, ApplicationCommand>($"/applications/{_gateway.ApplicationId}/guilds/{guild.Id}/commands", helloWorldCommand, cancellationToken);
-                if (result is not null)
-                    _logger.LogInformation("Added application command '{Command}'", result.Name);
+
             });
+        }
+
+        public async Task<ApplicationCommand?> RegisterCommandAsync(ApplicationCommand command, ulong guildId, CancellationToken cancellationToken)
+        {
+            var result = await _api.PostAsync<ApplicationCommand, ApplicationCommand>($"/applications/{_gateway.ApplicationId}/guilds/{guildId}/commands", command, cancellationToken);
+            if (result is not null)
+                _logger.LogInformation("Added application command '{Command}'", result.Name);
+            else
+                _logger.LogError("Failed trying to add command '{Command}'", command.Name);
+            return result;
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
